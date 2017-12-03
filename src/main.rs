@@ -7,7 +7,7 @@ extern crate rand;
 
 
 use clap::{App, Arg};
-use lettre::{EmailAddress, EmailTransport};
+use lettre::EmailTransport;
 use lettre::smtp::{ClientSecurity, SmtpTransport};
 use lettre::smtp::authentication::Credentials;
 use lettre_email::EmailBuilder;
@@ -241,18 +241,7 @@ fn find_hamilton_cycle(
 		}
 
 		if !broke {
-			let mut all_tainted = true;
-
-			for (i, flag) in tainted[current_node.index()].iter().enumerate() {
-				if santa_graph
-					.find_edge(current_node, NodeIndex::new(i))
-					.is_some()
-				{
-					all_tainted |= flag;
-				}
-			}
-
-			if all_tainted {
+			if edges.is_empty() {
 				return None;
 			}
 
@@ -285,9 +274,17 @@ fn email_cycle(
 		let email = EmailBuilder::new()
 			.to(source_address.as_str())
 			.from(sender)
-			.subject("Fam Secret Santa Assignment")
+			.subject("Fam Secret Santa Assignment, Take 2")
 			.text(format!(
-				"Your assignment for secret santa this year is '{}'",
+				"Hello,
+
+Please disregard the last email. I have corrected \
+				 my algorithm and everyone should now have someone they \
+				 listed. Aim to spend $10 on your gift.
+Your assignment for \
+				 secret santa this year is '{}.'
+
+ Greg",
 				destination_address
 			))
 			.build()
@@ -346,7 +343,14 @@ fn main() {
 		let to_add_destination: usize =
 			random::<usize>() % santa_graph.node_count();
 
-		if to_add_source == to_add_destination {
+		if to_add_source == to_add_destination
+			|| santa_graph
+				.find_edge(
+					NodeIndex::new(to_add_source),
+					NodeIndex::new(to_add_destination),
+				)
+				.is_some()
+		{
 			continue;
 		}
 
@@ -356,10 +360,27 @@ fn main() {
 			1,
 		);
 
+		println!(
+			"added a new edge from node {} to node {}",
+			to_add_source,
+			to_add_destination
+		);
+
 		edges_wrapped = find_hamilton_cycle(&santa_graph);
 	}
 
 	let edges = edges_wrapped.unwrap();
+
+	for edge in edges.iter() {
+		let (source_node, destination_node) =
+			santa_graph.edge_endpoints(*edge).unwrap();
+
+		println!(
+			"edge from node {} to node {}",
+			source_node.index(),
+			destination_node.index()
+		);
+	}
 
 	email_cycle(sender.as_str(), &mut transport, &santa_graph, &edges);
 }
