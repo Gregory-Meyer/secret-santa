@@ -1,16 +1,16 @@
 extern crate clap;
 extern crate lettre;
+extern crate lettre_email;
 extern crate native_tls;
 extern crate petgraph;
 extern crate rand;
 
 
 use clap::{App, Arg};
-use lettre::{EmailAddress, EmailTransport, SimpleSendableEmail};
+use lettre::{EmailAddress, EmailTransport};
 use lettre::smtp::{ClientSecurity, SmtpTransport};
-use lettre::smtp::client::net::ClientTlsParameters;
 use lettre::smtp::authentication::Credentials;
-use native_tls::TlsConnector;
+use lettre_email::EmailBuilder;
 use petgraph::{Directed, Graph};
 use petgraph::graph::{EdgeIndex, NodeIndex};
 use rand::{random, thread_rng, Rng};
@@ -189,16 +189,7 @@ fn parse_credentials(
 	let username = credentials_lines[2].clone();
 	let password = credentials_lines[3].clone();
 
-	let builder = match SmtpTransport::builder(
-		address,
-		ClientSecurity::Required(ClientTlsParameters::new(
-			"localhost".to_string(),
-			TlsConnector::builder()
-				.expect("unable to make TLS connector")
-				.build()
-				.expect("unable to make TLS connector"),
-		)),
-	) {
+	let builder = match SmtpTransport::builder(address, ClientSecurity::None) {
 		Ok(b) => b,
 		Err(e) => {
 			panic!("creating SMTP transport failed with error '{}'", e);
@@ -291,15 +282,16 @@ fn email_cycle(
 		let destination_address =
 			graph.node_weight(destination_index).unwrap();
 
-		let email = SimpleSendableEmail::new(
-			EmailAddress::new(sender.to_string()),
-			vec![EmailAddress::new(source_address.clone())],
-			"Fam Secret Santa Assignment".to_string(),
-			format!(
+		let email = EmailBuilder::new()
+			.to(source_address.as_str())
+			.from(sender)
+			.subject("Fam Secret Santa Assignment")
+			.text(format!(
 				"Your assignment for secret santa this year is '{}'",
 				destination_address
-			),
-		);
+			))
+			.build()
+			.unwrap();
 
 		match transport.send(&email) {
 			Ok(r) => println!(
@@ -308,7 +300,7 @@ fn email_cycle(
 				r.code
 			),
 			Err(e) => panic!(
-				"unable to send email to '{}' with error '{}'",
+				"unable to send email to '{}' with error '{:?}'",
 				source_address,
 				e
 			),
