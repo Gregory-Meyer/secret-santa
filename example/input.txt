@@ -1,0 +1,24 @@
+// any line starting with two forward slashes is ignored
+// empty lines are also ignored
+
+// number of nodes
+5
+// nodes: <node handle> <email address>
+// these do not need to be in any order
+ts tony.stark@emails.io
+bb bruce.banner@emails.io
+bw bruce.wayne@emails.io
+gl green.lantern@emails.io
+pp peter.parker@emails.io
+// edges: <origin node> <destination node>
+// these also do not need to be in any order
+ts bb
+ts bw
+bb bw
+bb gl
+bw gl
+bw pp
+gl pp
+gl ts
+pp ts
+pp bb
