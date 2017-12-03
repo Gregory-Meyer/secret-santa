@@ -284,7 +284,7 @@ Please disregard the last email. I have corrected \
 Your assignment for \
 				 secret santa this year is '{}.'
 
- Greg",
+Greg",
 				destination_address
 			))
 			.build()
@@ -322,6 +322,12 @@ fn main() {
 				.index(2)
 				.help("file with SMTP credentials"),
 		)
+		.arg(
+			Arg::with_name("FORCE")
+				.short("f")
+				.long("force")
+				.help("adds edges if there is not a hamiltonian cycle"),
+		)
 		.get_matches();
 
 
@@ -337,7 +343,16 @@ fn main() {
 
 	let mut edges_wrapped = find_hamilton_cycle(&santa_graph);
 
+	let force = matches.is_present("FORCE");
+
 	while edges_wrapped.is_none() {
+		if !force {
+			panic!(
+				"unable to find a hamilton cycle. rerun with -f (--force) to \
+				 randomly add edges"
+			);
+		}
+
 		let to_add_source: usize =
 			random::<usize>() % santa_graph.node_count();
 		let to_add_destination: usize =
