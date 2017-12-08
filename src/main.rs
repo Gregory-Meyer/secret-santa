@@ -8,7 +8,7 @@ extern crate rand;
 
 use clap::{App, Arg};
 use lettre::EmailTransport;
-use lettre::smtp::{ClientSecurity, SmtpTransport};
+use lettre::smtp::SmtpTransport;
 use lettre::smtp::authentication::Credentials;
 use lettre_email::EmailBuilder;
 use petgraph::{Directed, Graph};
@@ -189,7 +189,7 @@ fn parse_credentials(
 	let username = credentials_lines[2].clone();
 	let password = credentials_lines[3].clone();
 
-	let builder = match SmtpTransport::builder(address, ClientSecurity::None) {
+	let builder = match SmtpTransport::simple_builder(address.to_string()) {
 		Ok(b) => b,
 		Err(e) => {
 			panic!("creating SMTP transport failed with error '{}'", e);
@@ -274,17 +274,9 @@ fn email_cycle(
 		let email = EmailBuilder::new()
 			.to(source_address.as_str())
 			.from(sender)
-			.subject("Fam Secret Santa Assignment, Take 2")
+			.subject("Secret Santa Assignment")
 			.text(format!(
-				"Hello,
-
-Please disregard the last email. I have corrected \
-				 my algorithm and everyone should now have someone they \
-				 listed. Aim to spend $10 on your gift.
-Your assignment for \
-				 secret santa this year is '{}.'
-
-Greg",
+				"Your assignment for secret santa this year is '{}.'",
 				destination_address
 			))
 			.build()
@@ -329,7 +321,6 @@ fn main() {
 				.help("adds edges if there is not a hamiltonian cycle"),
 		)
 		.get_matches();
-
 
 	let input_filename = matches.value_of("INPUT").unwrap();
 	let credentials_filename = matches.value_of("CREDENTIALS").unwrap();
